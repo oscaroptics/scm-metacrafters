@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Bank</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.5.2/web3.min.js"></script>
+</head>
+<style>
+    body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: rgb(224, 248, 202);
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: rgb(168, 239, 237);
+        }
+        input[type="number"] {
+            padding: 5px;
+            margin: 5px;
+            width: 150px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover{
+          background-color: #083666;
+        }
+        h1{
+          color: red;
+        }
+        p{
+          color: rgb(22, 37, 211);
+        }
+</style>
+<body>
+  <div class="container">
+    <h1>Welcome To My Bank</h1>
+    <p>Here you can deposite eth and transfer the eth </p>
+    
+    
+        <h2>Connected Address: <span id="userAddress"></span></h2>
+        <p>Balance: <span id="balance"></span> ETH</p>
+    
+    
+    
+        <h2>Deposit</h2>
+        <label for="depositAmount">Amount:</label>
+        <input type="number" id="depositAmount" />
+        <button onclick="deposit()">Deposit</button>
+    
+
+    <div>
+        <h2>Withdraw</h2>
+        <label for="withdrawAmount">Amount:</label>
+        <input type="number" id="withdrawAmount" />
+        <button onclick="withdraw()">Withdraw</button>
+    </div>
+  </div>
+
+    <script type="text/javascript">
+        const contractAddress = '0x4A093E8aC6B36eb6D1FCda7072bD6A8b023C9e04'; 
+        const contractABI = [
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "initBalance",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "payable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "balance",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "withdrawAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "InsufficientBalance",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "Deposit",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "Withdraw",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "balance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "deposit",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getOwner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address payable",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_withdrawAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ]; 
+
+        const web3 = new Web3(Web3.givenProvider);
+        const contract = new web3.eth.Contract(contractABI, contractAddress);
+
+        async function updateUserInfo() {
+            const accounts = await web3.eth.getAccounts();
+            const userAddress = accounts[0];
+            document.getElementById('userAddress').textContent = userAddress;
+
+            const balance = await contract.methods.getBalance().call();
+            const balanceInEth = web3.utils.fromWei(balance, 'ether');
+            document.getElementById('balance').textContent = balanceInEth;
+        }
+
+        async function deposit() {
+            const amount = document.getElementById('depositAmount').value;
+            const accounts = await web3.eth.getAccounts();
+            const owner = accounts[0];
+
+            await contract.methods.deposit(web3.utils.toWei(amount, 'ether')).send({ from: owner });
+            updateUserInfo();
+            alert("Deposite Sucessfull");
+        }
+
+        async function withdraw() {
+            const amount = document.getElementById('withdrawAmount').value;
+            const accounts = await web3.eth.getAccounts();
+            const owner = accounts[0];
+
+            await contract.methods.withdraw(web3.utils.toWei(amount, 'ether')).send({ from: owner });
+            updateUserInfo();
+            alert("Withdraw Sucessfull");
+        }
+
+        window.onload = async function () {
+            if (window.ethereum) {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                await updateUserInfo();
+            } else {
+                alert('Please install MetaMask to interact with this contract.');
+            }
+        };
+    </script>
+</body>
+</html>
